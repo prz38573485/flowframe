@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Accepted |
+| Status | Accepted (amended by ADR-0027, ADR-0029) |
 | Date | 2026-09-30 |
 | Owner | Tech lead |
 | Phase | P0.1 (decision), P0.4 (proof) |
@@ -35,3 +35,8 @@ Title, subtitle, footer, logo, legend and accessibility summary must look identi
 
 - P0.4: the band algorithm never clips or overlays the body on SVG emitted for every MVP family.
 - P4 compositor tests cover all valid slot combinations and canvas limits.
+
+## Amendments
+
+- 2026-10-16, [ADR-0027](0027-logo-image-embedding-and-minimal-profile.md): The compositor embeds the logo as an `<image>` element whose `href` is the sanitized SVG data URI, instead of inlining the logo nodes.
+- 2026-10-16, [ADR-0029](0029-v0-1-command-set.md): `render` is post-MVP, so the consequence about body-only `render` output no longer applies.

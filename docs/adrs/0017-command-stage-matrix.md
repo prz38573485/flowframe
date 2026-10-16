@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Accepted |
+| Status | Accepted (amended by ADR-0029) |
 | Date | 2026-09-30 |
 | Owner | Tech lead, Product owner |
 | Phase | P1 |
@@ -43,3 +43,7 @@ Rules:
 ## Verification
 
 - A differential test over the whole corpus compares diagnostics from `validate`, `review` and `build` up to the IR stage.
+
+## Amendments
+
+- 2026-10-16, [ADR-0029](0029-v0-1-command-set.md): The `render` column is dropped. The `review` column applies from P7: `review` runs the same stages as `validate` with a View before source-conformance. Rule 1 and the differential test compare `validate` with `build`, and from P7 also with `review`. Under rule 5 only `compile` and `build` write files.

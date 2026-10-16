@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Accepted |
+| Status | Accepted (amended by ADR-0029) |
 | Date | 2026-09-30 |
 | Owner | Tech lead |
 | Phase | P1 (before P2.4) |
@@ -48,3 +48,7 @@ JSON diagnostics are consumed by CI and by the AI repair loop, but had no schema
 
 - Every CLI contract test in JSON mode validates stderr against the schema and asserts empty stdout.
 - A registry test fails when a code used in the source is missing from `docs/diagnostics.md`.
+
+## Amendments
+
+- 2026-10-16, [ADR-0029](0029-v0-1-command-set.md): Item 6: the row "Missing or malformed FlowFrame D2 header, or theme fingerprint mismatch in `render`" is dropped; `render` is post-MVP.

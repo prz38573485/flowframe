@@ -199,17 +199,15 @@ FlowFrame never switches layout engines silently based on a subjective visual-qu
 flowframe validate --model MODEL [--view VIEW] [--config CONFIG]
 flowframe validate --theme THEME_FILE
 flowframe compile --model MODEL --view VIEW [--config CONFIG] --output diagram.d2
-flowframe render --input diagram.d2 [--layout elk] [--config CONFIG] --output diagram.svg
 flowframe build --model MODEL (--view VIEW | --all) [--config CONFIG] [--layout elk] --output-dir build/
-flowframe review --model MODEL --view VIEW [--config CONFIG]
-  [--source SOURCE] [--mode MODE] [--format text|json]
+flowframe review --model MODEL --view VIEW [--config CONFIG] --source SOURCE...
 ```
 
-`build` produces the final branded diagram; `render` produces only its body and requires generated, policy-checked D2 plus matching theme configuration. `build --all` reads the config's explicit `views` list and writes to `build/<view-id>/`. Every processing command supports `--format text|json` and `--debug`.
+`build` produces the final branded diagram; `build --debug` also keeps the raw renderer SVG for inspection. `build --all` reads the config's explicit `views` list and writes to `build/<view-id>/`. Every processing command supports `--format text|json` and `--debug`.
 
-`review` is added in Stage 4; syntax, semantic and policy modes work without AI. Default review reuses the validate pipeline and returns the same findings/status for the same model and view. Source-conformance requires `--source` and the optional adapter; visual review is post-MVP. `compare-layouts` is post-MVP because v0.1 requires only ELK. Its provisional contract is documented in the PRD and technical specification.
+`validate` performs all deterministic checks. `review` is added in Stage 4 for source-conformance only: it requires `--source` and the optional AI adapter, and it reports the same validation diagnostics as `validate` before comparing the model with the sources. Visual review and a low-level `render` command are post-MVP. `compare-layouts` is post-MVP because v0.1 requires only ELK. Its provisional contract is documented in the PRD and technical specification.
 
-Build outputs are ordinary files in a dedicated directory, suitable for Markdown links, copying and Git. Builds keep one private backup and recover interrupted replacements; directory replacement is not atomic for concurrent readers. Consume outputs after a successful build and exclude private `.<name>.flowframe/` state from commits.
+Build outputs are ordinary files in a dedicated directory, suitable for Markdown links, copying and Git. Directory replacement is not atomic for concurrent readers, and FlowFrame keeps no backup: after an interrupted build the output may be missing until the build is rerun. Consume outputs after a successful build and exclude private `.<name>.flowframe/` state from commits.
 
 The renderer must match FlowFrame's approved official D2 binary, including its SHA-256, not just its version. The planned distribution includes an explicit installer helper and offline instructions. A differently rebuilt binary may be rejected even if installed by a package manager; builds never download D2 automatically.
 

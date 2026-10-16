@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Accepted |
+| Status | Accepted (amended by ADR-0029) |
 | Date | 2026-09-30 |
 | Owner | Product owner, AI evaluation owner, Security reviewer |
 | Phase | P7.1 (platform), P7.4 (thresholds) |
@@ -48,3 +48,7 @@ The PRD requires one AI adapter that generates System Model and View files and a
 
 - P7.4 evaluation report with the frozen thresholds.
 - Offline adapter tests and prompt-injection tests in CI.
+
+## Amendments
+
+- 2026-10-16, [ADR-0029](0029-v0-1-command-set.md): Source-conformance runs as `flowframe review --model MODEL --view VIEW [--config CONFIG] --source SOURCE...` without `--mode`. `review` first reports the validation diagnostics of the model and View and calls the adapter only when there are no errors.

@@ -80,7 +80,7 @@ FlowFrame v0.1 MUST support:
 - a small, documented semantic vocabulary,
 - semantic validation in addition to schema validation,
 - local and CI core execution without network access (optional AI adapters may use a network),
-- read-only `review` modes `syntax`, `semantic` and `policy`, plus optional AI source-conformance review,
+- optional read-only AI source-conformance `review`; deterministic checking is `validate` ([ADR-0029](adrs/0029-v0-1-command-set.md)),
 - explicit multi-view project builds,
 - example models and golden-file tests,
 - one AI integration adapter that generates System Model and View Specification files.
@@ -95,13 +95,14 @@ FlowFrame v0.1 MUST support:
 - advanced visual review using rendered images,
 - additional AI platform adapters,
 - model migration tooling,
-- whole-project validation without rendering (`validate --all`, `review --all`),
+- whole-project validation without rendering (`validate --all`),
 - element-count guideline warnings (section 14),
 - boundary-scoped selection such as `select.within`,
 - flow source/sink role annotations,
 - glyph-coverage validation for fonts,
 - machine-readable SPDX license inventories,
-- Python API entry points for `render` and `review`.
+- a Python API entry point for `review`,
+- a low-level `render` command for compiled D2, with its own ADR for the trust model of supplied D2.
 
 ### 3.3. Non-goals
 
@@ -201,7 +202,7 @@ D2 is an implementation dependency, not the public FlowFrame authoring format. F
 
 The framework MUST NOT silently switch layout engines based on a subjective assessment of visual quality.
 
-v0.1 supports only `elk`: `render.layoutEngine` in Project Configuration defaults to `elk`; `build --layout` and `render --layout` override it explicitly (precedence: option > configuration > `elk`). An unsupported engine on the command line is a usage error (2); an unsupported engine in `flowframe.yaml` is a validation error (1); missing installed dependencies return code 3. There is no fallback option in v0.1 ([ADR-0003](adrs/0003-elk-baseline-optional-tala.md)). Any post-MVP fallback requires a separate explicit contract and records both requested and effective engines.
+v0.1 supports only `elk`: `render.layoutEngine` in Project Configuration defaults to `elk`; `build --layout` overrides it explicitly (precedence: option > configuration > `elk`). An unsupported engine on the command line is a usage error (2); an unsupported engine in `flowframe.yaml` is a validation error (1); missing installed dependencies return code 3. There is no fallback option in v0.1 ([ADR-0003](adrs/0003-elk-baseline-optional-tala.md)). Any post-MVP fallback requires a separate explicit contract and records both requested and effective engines.
 
 The post-MVP comparison command MAY render the same view with two or more explicitly selected installed engines; it never selects all installed engines implicitly.
 
@@ -1053,7 +1054,7 @@ Decoration space is reserved by a deterministic SVG composition step rather than
 
 A top slot may contain only one primary decoration; configuring both logo and title for `top-left` is a validation error. The subtitle is part of the title block. The composition step MUST run before final SVG normalization and snapshot comparison. It MUST NOT ask the layout engine to position decorations.
 
-A logo MUST be a local approved SVG asset from the active Theme/Brand Pack. It MUST be embedded or bundled into the output so that SVG rendering remains offline and portable. Its accessible alternative text comes from theme asset metadata.
+A logo MUST be a local approved SVG asset from the active Theme/Brand Pack. It is embedded as a separate image document: an `<image>` element whose data URI holds the canonical sanitized SVG bytes. SVG rendering therefore remains offline and portable, and logo IDs never mix with diagram IDs ([ADR-0027](adrs/0027-logo-image-embedding-and-minimal-profile.md)). Its accessible alternative text comes from theme asset metadata.
 
 Asset-level `maxWidth` and `maxHeight` are positive CSS-pixel bounds for the rendered logo box. The composer preserves the intrinsic aspect ratio and scales the logo up or down to the largest size that fits within that box ("contain"). These requested bounds MUST remain below implementation-wide security limits for dimensions, source bytes, element count and nesting depth; a Theme/Brand Pack cannot raise the global limits.
 
@@ -1069,7 +1070,7 @@ The v0.1 theme MUST:
 - include a deterministic top-level SVG `<desc>` summarizing selected element IDs/labels and relations, or ordered scenario steps, plus descriptions for visible objects; this is not a separate required file,
 - expose the diagram title and logo alternative text in the final SVG accessibility metadata, added by the compositor independently of renderer support.
 
-The summary template, per-object metadata and ARIA attributes are defined in [ADR-0014](adrs/0014-svg-accessibility-metadata.md) and documented in `rules/accessibility-rules.md`. View `purpose` and object `description` values feed the summary and per-object descriptions. These requirements apply to `build` output; `render` body SVG carries no summary.
+The summary template, per-object metadata and ARIA attributes are defined in [ADR-0014](adrs/0014-svg-accessibility-metadata.md) and documented in `rules/accessibility-rules.md`. View `purpose` and object `description` values feed the summary and per-object descriptions. These requirements apply to `build` output.
 
 Contrast pairs checked deterministically are listed in section 13.9.
 
@@ -1328,41 +1329,43 @@ The implementation MUST define and test:
 
 ### 16.5. Logo SVG sanitizer profile
 
-Logo sanitization MUST use the versioned `flowframe-svg-logo/v1` profile. The implementation MUST maintain an element-and-attribute allowlist and reject unsupported rendering or active content. It MAY remove only the explicitly allowlisted inert editor metadata described below.
+Logo sanitization MUST use the versioned `flowframe-svg-logo/v1` profile ([ADR-0027](adrs/0027-logo-image-embedding-and-minimal-profile.md)). The implementation MUST maintain an element-and-attribute allowlist and reject unsupported rendering or active content. It MAY remove only the explicitly allowlisted inert editor metadata described below.
 
-The exact per-element attribute and CSS-property matrix is normative and MUST be published in `rules/svg-logo-profile-v1.md`. At minimum it covers:
+The exact per-element attribute and style-property matrix is normative and MUST be published in `rules/svg-logo-profile-v1.md`. At minimum it covers:
 
 - geometry and coordinate attributes required by the allowed vector elements,
 - safe paint attributes including fill, stroke, opacity, line and fill rules,
-- transform, gradient, clipping, masking and bounded-filter attributes,
-- fragment-only `href`, `url(#id)`, `id` and `class` references,
+- transform, gradient and clipping attributes,
+- fragment-only `href`, `url(#id)` and `id` references,
 - accessibility metadata and XML namespace attributes,
-- a CSS property allowlist equivalent to the permitted presentation attributes.
+- the style properties accepted in `style` attributes, each equivalent to a permitted presentation attribute.
 
 The v1 profile MUST support:
 
 - vector structure and geometry: `svg`, `g`, `defs`, `title`, `desc`, `path`, `rect`, `circle`, `ellipse`, `line`, `polyline` and `polygon`,
 - paint servers: `linearGradient`, `radialGradient` and `stop`,
-- clipping and masking: `clipPath` and `mask`,
+- clipping: `clipPath`,
 - internal reuse through `use` and fragment-only `href="#id"` or `xlink:href="#id"` (conflicting attributes are errors),
-- internal `url(#id)` references for gradients, clipping, masks and filters,
-- a bounded filter subset: `filter`, `feBlend`, `feColorMatrix`, `feComposite`, `feDropShadow`, `feFlood`, `feGaussianBlur`, `feMerge`, `feMergeNode` and `feOffset`,
-- safe presentation attributes and inline style properties required by those features.
+- internal `url(#id)` references for gradients and clipping,
+- safe presentation attributes,
+- `style` attributes whose declarations name only permitted properties with values valid for the equivalent presentation attribute; `url()` is allowed only as `url(#id)`.
 
 The v1 profile MUST reject:
 
 - `script`, `foreignObject`, embedded HTML, frames, audio, video and animation elements,
+- `<style>` elements and `class` attributes,
+- `mask`, `filter` and every filter primitive,
 - event-handler attributes such as `onload` or `onclick`,
 - external URLs, network references, non-fragment `href`, CSS `@import` and external `url(...)`,
 - embedded raster images and executable or active content,
-- unknown elements, attributes, CSS rules or filter primitives,
-- assets exceeding global byte-size, dimension, element-count, nesting or filter-region limits.
+- unknown elements, attributes or style properties,
+- assets exceeding global byte-size, dimension, element-count or nesting limits.
 
-Canonicalization removes XML comments, `<metadata>` subtrees and attributes in explicitly enumerated Inkscape/Sodipodi namespace URIs after bounded parsing and whole-document active-content/URL checks. Unknown namespaces and rendering elements remain errors. This narrow inert-metadata exception is not permission to strip arbitrary unsupported content. Number serialization MUST preserve numeric value without rounding; namespace and ID rewrites preserve all valid references.
+Canonicalization removes XML comments, `<metadata>` subtrees and attributes in explicitly enumerated Inkscape/Sodipodi namespace URIs after bounded parsing and whole-document active-content/URL checks. Unknown namespaces and rendering elements remain errors. This narrow inert-metadata exception is not permission to strip arbitrary unsupported content. Number serialization MUST preserve numeric value without rounding.
 
-A `<style>` element MAY be accepted only when parsed by a real CSS parser against a property allowlist; regular-expression-only CSS sanitization is forbidden. Otherwise authors must convert styles to permitted presentation attributes. Rejected assets produce an actionable diagnostic and are never rendered in partially sanitized form.
+`style` attributes MUST be parsed by a real CSS parser as declaration lists; regular-expression-only CSS sanitization is forbidden. Authors whose logos use stylesheets, classes, masks or filters must re-export them, and the diagnostic names the construct to remove. Rejected assets produce an actionable diagnostic and are never rendered in partially sanitized form. Masks, filters and stylesheets may be added only by a later profile version.
 
-For identical input bytes, sanitizer profile, implementation and version, sanitized output MUST be byte-identical after canonical namespace and attribute ordering plus deterministic ID rewriting and reference normalization. The manifest records the profile, implementation version and input/output SHA-256 for every processed brand asset.
+For identical input bytes, sanitizer profile, implementation and version, sanitized output MUST be byte-identical after canonical namespace and attribute ordering. The manifest records the profile, implementation version and input/output SHA-256 for every processed brand asset.
 
 ---
 
@@ -1374,31 +1377,30 @@ The core v0.1 commands use named options consistently:
 flowframe validate --model MODEL [--view VIEW] [--config CONFIG]
 flowframe validate --theme THEME_FILE
 flowframe compile --model MODEL --view VIEW [--config CONFIG] --output D2
-flowframe render --input D2 [--layout elk] [--config CONFIG] --output SVG
 flowframe build --model MODEL (--view VIEW | --all) [--config CONFIG]
   [--layout elk] --output-dir DIR
 flowframe review --model MODEL --view VIEW [--config CONFIG]
-  [--source SOURCE] [--mode syntax|semantic|policy|source-conformance]
+  --source SOURCE [--source SOURCE ...]        # P7, optional AI adapter
 flowframe version
 ```
 
 All commands except `version` accept `--format text|json` (default text) and `--debug`. Diagnostics go to stderr; JSON mode emits one complete JSON diagnostic array conforming to `flowframe-diagnostics/v1`, including an empty array on success. In text mode artifact paths may be printed to stdout; in JSON mode stdout is empty. In JSON mode debug details use an optional `debug` object inside a diagnostic; no extra log text may corrupt the JSON stream. Debug output MUST NOT expose credentials. A `--strict` warning-promotion option is deferred.
 
-Every command uses one validation service. Which stages each command runs is defined by the command stage matrix in [ADR-0017](adrs/0017-command-stage-matrix.md); for the same inputs, `validate --model M --view V`, default `review` and `build` report identical diagnostics for every stage up to and including the family IR. In particular, `validate --view` runs selection, so empty selections, flow undirected-dependency errors and selection warnings are reported without rendering.
+Every command uses one validation service. Which stages each command runs is defined by the command stage matrix in [ADR-0017](adrs/0017-command-stage-matrix.md); for the same inputs, `validate --model M --view V`, `build` and the validation part of `review` report identical diagnostics for every stage up to and including the family IR. In particular, `validate --view` runs selection, so empty selections, flow undirected-dependency errors and selection warnings are reported without rendering.
 
 `validate` without `--view` checks the model, resolved configuration and theme, but skips view-specific checks. Whole-project `validate --all` is post-MVP; `build --all` is the v0.1 whole-project command. `--theme` is an exclusive form that validates the theme and declared assets without a model/config; its theme directory is the asset root. Neither form invokes D2. Full asset validation is available from P4; pre-release limitations are explicit in the plan.
 
 `compile` runs source/asset/IR validation and policy lint, then emits one self-contained generated D2 file. It does not invoke D2 or emit a manifest.
 
-`compile --output` and `render --output` MUST NOT resolve to any input file of the invocation. An existing output file is replaced only if it is a FlowFrame artifact of the same type (a D2 file with a valid FlowFrame header, or an SVG starting with the FlowFrame marker comment); otherwise the command fails with a policy error (5) and leaves the file unchanged ([ADR-0010](adrs/0010-output-publication.md)). Classes are generated from the resolved theme; packaged `resources/d2` files are internal templates, not output imports.
+`compile --output` MUST NOT resolve to any input file of the invocation. An existing output file is replaced only if it is a D2 file with a valid FlowFrame header; otherwise the command fails with a policy error (5) and leaves the file unchanged ([ADR-0010](adrs/0010-output-publication.md)). Classes are generated from the resolved theme; packaged `resources/d2` files are internal templates, not output imports.
 
-`render` is a low-level body-only operation: it requires the FlowFrame generated-file header and passes the complete D2 policy lint before `d2 validate` and rendering. A header is not proof of safety. Hand-authored D2 is unsupported. It emits one verified body SVG, with no project decorations or manifest. Optional explicit `--config` supplies the same theme/font environment used at compile time; without it only the built-in configuration is used and no upward discovery occurs. The generated header includes a deterministic theme fingerprint, exactly the aggregate SHA-256 value recorded as `theme.sha256` in a build manifest (the same raw-byte hashing algorithm, even when compile emits no manifest). It is not a hash of D2 contents or an authenticity proof. A missing or malformed header and a mismatch with the resolved render theme are validation errors (1). `render --layout` overrides `render.layoutEngine` from an explicit `--config` with the same precedence as `build`. Therefore `compile + render` is not equivalent to `build`. This restriction avoids a hidden dependency on compiler working directories.
+`render` is post-MVP ([ADR-0029](adrs/0029-v0-1-command-set.md)). To inspect the body without decorations, `build --debug` keeps the raw renderer SVG in a diagnostic temporary directory ([ADR-0008](adrs/0008-canonical-svg-output.md)).
 
-`build` performs the complete pipeline, including `d2 validate`, decorations, accessibility summary, output verification and manifest publication. For a single `--view`, outputs are directly in DIR. `--all` requires a nonempty explicit config `views` list. Before rendering the first view it runs every validation stage up to the family IR for all entries; any error there stops the command with nothing published. It then renders and writes each view to `DIR/<view-id>/` in sorted View-ID order. Both view options together, neither option, an empty registry or duplicate output IDs are errors. All entries share the supplied model, configuration and theme. Each view is prepared completely before publication to its ordinary output directory, using the recoverable replacement contract in section 17.2. Directory replacement is not atomic for concurrent readers, and the project is not one transaction; a render or publication failure stops processing and reports which views were published.
+`build` performs the complete pipeline, including `d2 validate`, decorations, accessibility summary, output verification and manifest publication. For a single `--view`, outputs are directly in DIR. `--all` requires a nonempty explicit config `views` list. Before rendering the first view it runs every validation stage up to the family IR for all entries; any error there stops the command with nothing published. It then renders and writes each view to `DIR/<view-id>/` in sorted View-ID order. Both view options together, neither option, an empty registry or duplicate output IDs are errors. All entries share the supplied model, configuration and theme. Each view is prepared completely before publication to its ordinary output directory, using the replacement contract in section 17.2. Directory replacement is not atomic for concurrent readers, and the project is not one transaction; a render or publication failure stops processing and reports which views were published.
 
 D2 executable resolution uses `FLOWFRAME_D2` if set (an absolute executable path; a relative path is usage error 2), otherwise the first `d2` on PATH. The pin is the package resource `d2-pin.json`; the installer helper is `python -m flowframe.install_d2` ([ADR-0006](adrs/0006-pinned-d2-distribution.md)). Every render invocation MUST verify version and SHA-256 against the packaged platform-specific pin; a mismatch or absence is dependency error 3. There is no separate reproducible mode: the same rule applies locally and in CI. Supported executables are the official release binaries accepted by the packaged per-platform pin. A distribution rebuild is unsupported unless its bytes match that pin; matching the version string alone is insufficient. FlowFrame MUST provide an explicit installer helper and offline installation instructions for the approved artifact, without downloading it implicitly during a build. Diagnostics distinguish executable missing, version mismatch and checksum mismatch and point to those instructions. Updating the approved D2 pin requires a FlowFrame release.
 
-`review` is read-only. MVP modes `syntax`, `semantic` and `policy` reuse the same validation pipeline, diagnostic codes and source-location handling as `validate`, without D2 or AI; they MUST NOT maintain a second implementation of those rules. The default review modes produce the same findings/status as `validate --model ... --view ...` for the same inputs. Explicit modes select validation stages while retaining prerequisite checks; syntax here means YAML/schema correctness, not rendering. `--mode` and `--source` are repeatable. Default modes are syntax, semantic and policy. Optional `source-conformance` requires at least one source and the P7 AI adapter. Missing requested adapter returns 3. Invalid combinations return 2: `--source` without `source-conformance`, and `source-conformance` without `--source`. Source-conformance findings use the `FFA` prefix with severity `warning` and do not change the exit status. Visual review and its future `--svg` option are post-MVP.
+`review` is read-only and arrives in P7 with the AI adapter ([ADR-0029](adrs/0029-v0-1-command-set.md), [ADR-0025](adrs/0025-ai-adapter-boundary.md)). It has no `--mode` option and requires at least one `--source`; a missing `--source` is a usage error (2). It first runs the validation service exactly as `validate --model MODEL --view VIEW` does and reports the same diagnostics. If any error is found, it stops with the exit code `validate` would return and does not call the adapter. Otherwise it runs source-conformance: findings use the `FFA` prefix with severity `warning` and do not change the exit status. A missing adapter returns 3. Visual review and its future `--svg` option are post-MVP.
 
 The post-MVP layout comparison command has this provisional contract:
 
@@ -1426,14 +1428,14 @@ Each error diagnostic carries one category; prefixes identify areas, not exit co
 
 | Category | Typical prefixes/cases | Exit |
 |---|---|---:|
-| validation | FFC/FFS/FFM/FFV/FFT/FFI/FFD: malformed source, bad references, invalid combination, unsupported engine in configuration, source file outside the project root, missing/malformed D2 header or theme fingerprint mismatch, supplied D2 artifact rejected by standalone render | 1 |
+| validation | FFC/FFS/FFM/FFV/FFT/FFI/FFD: malformed source, bad references, invalid combination, unsupported engine in configuration, source file outside the project root | 1 |
 | usage | invalid CLI combinations, unsupported `--layout` value, invalid `SOURCE_DATE_EPOCH` or relative `FLOWFRAME_D2` | 2 |
 | dependency | FFR: missing or wrong pinned renderer; FFA: missing requested adapter | 3 |
-| execution | FFR: render process failure, timeout, invalid output geometry, output I/O, occupied writer lock or failed publication/recovery | 4 |
+| execution | FFR: render process failure, timeout, invalid output geometry, output I/O, occupied writer lock or failed publication | 4 |
 | policy | FFC/FFS/FFT/FFD/FFR: forbidden styling fields, remote resources, symlink or asset path escape, forbidden output directory, refused overwrite of a non-artifact file, input or SVG exceeding fixed limits, unsafe SVG | 5 |
 | internal | FFX: unexpected implementation failure, including syntax rejection of D2 freshly generated within build | 6 |
 
-A syntax rejection from `d2 validate` inside build is FFX/internal (6), because FlowFrame just generated the input under its pinned toolchain. In standalone render, a supplied artifact can be corrupted or edited despite its header, so a syntax rejection is FFD/validation (1). Failure to execute D2 uses dependency (3), while a process crash or timeout uses execution (4). An occupied writer lock has its own stable FFR diagnostic and returns 4 immediately; it is not invalid model input.
+A syntax rejection from `d2 validate` inside build is FFX/internal (6), because FlowFrame just generated the input under its pinned toolchain. Failure to execute D2 uses dependency (3), while a process crash or timeout uses execution (4). An occupied writer lock has its own stable FFR diagnostic and returns 4 immediately; it is not invalid model input.
 
 Known forbidden styling fields produce policy errors even if rejected by a closed schema; other unknown fields are ordinary validation errors. Structural schema checks may stop before dependent policy checks. Among errors actually observed, precedence is 6 > 5 > 4 > 3 > 2 > 1; usage errors normally terminate before processing. SIGINT terminates with 130 after cleanup. Warnings/info alone return 0. Never continue unsafe processing merely to discover a higher-priority error.
 
@@ -1448,11 +1450,11 @@ build/
 
 The CLI MUST write diagnostics to stderr and MUST NOT infer success from the presence of an output file. It MUST check the D2 process exit status because D2 may leave a partial output after a rendering error. The logical per-view output is an ordinary dedicated directory containing the three artifacts. Builds prepare and verify a complete staging directory before replacing the target under a writer lock (technical-spec §11.1). An existing empty directory is accepted; a previous FlowFrame output is replaceable only when its manifest (in any manifest version the release can read) and file inventory identify the expected intact artifact set. Unrelated files, modified artifacts or output symlinks are rejected with an actionable diagnostic and are not overwritten.
 
-Besides the target, a build writes only the private control directory `<parent>/.<name>.flowframe/` (lock, staging, one backup, recovery journal). It is untracked build state. `--output-dir` is rejected (policy, 5) when it is a filesystem root, the process working directory, the resolved project root, an ancestor of any resolved source, configuration, theme or asset file, inside a theme directory, or a symlink. Only local POSIX filesystems are supported ([ADR-0010](adrs/0010-output-publication.md)).
+Besides the target, a build writes only the private control directory `<parent>/.<name>.flowframe/` (ownership marker, lock and disposable staging state). It is untracked build state. `--output-dir` is rejected (policy, 5) when it is a filesystem root, the process working directory, the resolved project root, an ancestor of any resolved source, configuration, theme or asset file, inside a theme directory, or a symlink. Only local POSIX filesystems are supported ([ADR-0010](adrs/0010-output-publication.md)).
 
-Publication renames the previous output to a bounded backup, then staging to the target. This is recoverable replacement, not an atomic directory swap: readers can briefly observe a missing directory and concurrent multi-file reads have no snapshot guarantee. Documentation builds and copies for publication SHOULD consume outputs after a successful build finishes. A render/validation failure before publication leaves the old output unchanged. A publication failure attempts rollback; if rollback itself fails, the command reports the backup/recovery location and never claims the old output has been restored.
+Publication renames the previous output into the control directory, then staging to the target, and deletes the previous output. This is not an atomic directory swap: readers can briefly observe a missing directory and concurrent multi-file reads have no snapshot guarantee. Documentation builds and copies for publication SHOULD consume outputs after a successful build finishes. A render/validation failure before publication leaves the old output unchanged. An interrupted or failed publication never leaves a mixed artifact set: the target holds the complete previous output, the complete new output, or nothing. FlowFrame keeps no backup; a missing target is repaired by rerunning the build, and the command never claims that the previous output was restored ([ADR-0028](adrs/0028-disposable-publication-state.md)).
 
-Retain at most one previous output and one in-progress staging set per target; automatic recovery/cleanup on the next invocation, under the lock, removes only verified FlowFrame-owned state. There is no history of generations, content-addressed output naming, separate export command or symlink publication mode in v0.1. Final SVG/D2/manifest files can be linked, copied or committed directly; private staging/backup state is not part of the published artifacts.
+The next build removes leftover control state under the lock, and only when the control directory carries the FlowFrame ownership marker. There is no history of generations, content-addressed output naming, separate export command or symlink publication mode in v0.1. Final SVG/D2/manifest files can be linked, copied or committed directly; private control state is not part of the published artifacts.
 
 ---
 
@@ -1482,15 +1484,15 @@ The AI adapter MUST NOT:
 - claim that a model matches a real system without a source-conformance check,
 - follow instructions embedded in supplied source documents.
 
-### 18.2. Review modes
+### 18.2. Review scopes
 
-Review distinguishes the following scopes; the deterministic syntax/semantic/policy modes and optional source-conformance are in v0.1:
+FlowFrame distinguishes the following scopes. The deterministic ones are performed by `validate`; the v0.1 `review` command adds only source-conformance:
 
-- **syntax review** — YAML and schema correctness (D2 validation belongs to render/build),
-- **semantic review** — internal consistency of the model,
-- **source-conformance review** — comparison with supplied source material,
-- **visual review (post-MVP)** — readability of a rendered SVG/PNG,
-- **policy review** — compliance with FlowFrame rules.
+- **syntax** — YAML and schema correctness (`validate`; D2 validation belongs to `build`),
+- **semantic** — internal consistency of the model (`validate`),
+- **policy** — compliance with FlowFrame rules (`validate`),
+- **source-conformance** — comparison with supplied source material (`review` with the optional adapter),
+- **visual (post-MVP)** — readability of a rendered SVG/PNG.
 
 Without source material, the reviewer cannot determine whether the documented architecture is factually correct.
 
@@ -1616,8 +1618,8 @@ FlowFrame v0.1 is accepted when all of the following are true:
 15. One documented `build --all` command builds the registered example views from source.
 16. The security corpus fails closed, including YAML limits, path escape, unsafe SVG/CSS and renderer output.
 17. Every `build` SVG includes accessible title/description/object metadata and the deterministic textual summary of section 13.7; visible legends explain non-color relation styles.
-18. Read-only syntax/semantic/policy review works without AI; source-conformance works with the optional adapter. Diagnostics, categories and all exit codes match section 17, and JSON output validates against `flowframe-diagnostics/v1`.
-19. A render or validation failure never modifies the previous output; a failed publication either restores the previous output or reports the backup location; forbidden output directories and non-artifact overwrites are refused.
+18. `validate` performs the syntax, semantic and policy checks without AI; `review` runs source-conformance with the optional adapter after the same validation. Diagnostics, categories and all exit codes match section 17, and JSON output validates against `flowframe-diagnostics/v1`.
+19. A render or validation failure never modifies the previous output; an interrupted or failed publication never leaves a mixed artifact set and is repaired by rerunning the build; forbidden output directories and non-artifact overwrites are refused.
 20. The D2 installer helper installs the pinned executable from a local archive without network access; missing executable, wrong version and wrong checksum produce distinct exit-3 diagnostics.
 21. Small and medium corpus builds stay within the performance budgets of [ADR-0023](adrs/0023-performance-budgets.md).
 

@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Accepted |
+| Status | Accepted (amended by ADR-0027) |
 | Date | 2026-09-30 |
 | Owner | Tech lead, Security reviewer |
 | Phase | P0.3 (embedding proof), P0.6 (icon set) |
@@ -42,3 +42,7 @@ The PRD required "approved, sanitized icons" embedded in D2, and recorded `asset
 
 - Package build test: every icon passes the sanitizer and its hash matches the index.
 - Runtime tests: tampered icon bytes, missing entry and missing file fail.
+
+## Amendments
+
+- 2026-10-16, [ADR-0027](0027-logo-image-embedding-and-minimal-profile.md): Icons are sanitized with the reduced `flowframe-svg-logo/v1` profile, which rejects `<style>`, `class`, masks and filters. The package build test checks that the chosen icon set satisfies it.

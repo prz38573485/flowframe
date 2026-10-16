@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Accepted |
+| Status | Accepted (amended by ADR-0027) |
 | Date | 2026-09-30 |
 | Owner | Tech lead, Security reviewer |
 | Phase | P0.6 (values) |
@@ -40,3 +40,7 @@ Earlier drafts described the renderer timeout and YAML alias limits as "configur
 ## Verification
 
 - P6.3 security suite exercises every limit at the boundary and one unit above it.
+
+## Amendments
+
+- 2026-10-16, [ADR-0027](0027-logo-image-embedding-and-minimal-profile.md): The filter-region limit in item 2 is dropped because `flowframe-svg-logo/v1` rejects filters.

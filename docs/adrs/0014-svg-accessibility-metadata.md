@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Accepted |
+| Status | Accepted (amended by ADR-0027, ADR-0029) |
 | Date | 2026-09-30 |
 | Owner | Tech lead, Accessibility and design reviewer |
 | Phase | P0.3 (hook proof) |
@@ -58,3 +58,8 @@ Every final SVG needs a deterministic title, a top-level `<desc>` summary and de
 
 - Golden tests for `<desc>` in each family.
 - P6.4 checks in every ADR-0022 consumer that the accessibility tree exposes title and description.
+
+## Amendments
+
+- 2026-10-16, [ADR-0027](0027-logo-image-embedding-and-minimal-profile.md): Item 6: the logo `<title>` is attached to the logo `<image>` element. Logo IDs live in their own embedded document, so item 7 covers only FlowFrame-generated metadata nodes.
+- 2026-10-16, [ADR-0029](0029-v0-1-command-set.md): Item 1: `render` is post-MVP, so the metadata requirements concern `build` output only.
