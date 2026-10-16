@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Accepted |
+| Status | Accepted (amended by ADR-0030) |
 | Date | 2026-09-30 |
 | Owner | Tech lead, Product owner |
 | Phase | P0.1 |
@@ -36,3 +36,7 @@ The PRD, the technical specification and the implementation plan each maintained
 
 - A CI documentation check confirms that every ADR file listed in the register exists and that every ADR file is listed.
 - Links from the PRD, the technical specification and the plan to `docs/adrs/` resolve.
+
+## Amendments
+
+- 2026-10-16, [ADR-0030](0030-single-owner-per-normative-rule.md): Item 3 now requires every ADR with phase P0.x to be Accepted or Rejected before the P0 exit gate.

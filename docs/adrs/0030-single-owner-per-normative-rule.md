@@ -2,8 +2,8 @@
 
 | Field | Value |
 |---|---|
-| Status | Proposed |
-| Date | 2026-10-01 |
+| Status | Accepted |
+| Date | 2026-10-16 |
 | Owner | Product owner, Tech lead |
 | Phase | P0.1 |
 | Related | PRD §1, §25; technical-spec §1; implementation-plan §1; ADR-0001 |
@@ -23,29 +23,37 @@ ADR-0001 removed duplicated lists of open decisions. The normative content itsel
 
 Each copy has to be kept consistent by hand. Several recent changes consisted mainly of re-aligning copies after review, and every further amendment repeats that cost. The PRD also carries implementation detail (processing order, internal file names, hashing layouts), so product readers have to read through design text to find behavior.
 
+Two related gaps exist in the decision process:
+
+- ADR-0001 item 3 requires every P0 ADR to be **Accepted** before the P0 exit gate, so a P0 ADR that is rejected after its experiment would block the gate.
+- The register says that changing a decision requires a superseding ADR, but not how an ADR that replaces only some items of an accepted ADR is recorded.
+
 ## Alternatives considered
 
 - **Keep the current layout and rely on review to catch drift.** This is how the documents work today, and it is where the drift came from.
-- **Give every normative rule one owning document; other documents link to it with at most one sentence of summary.** Proposed here.
+- **Give every normative rule one owning document; other documents link to it with at most one sentence of summary.** Adopted.
 - **Merge PRD and technical specification into one document.** Removes the duplication but mixes product decisions with implementation design, which ADR-0001 roles keep separate (Product owner and Tech lead).
+- **Reduce ADRs to links.** Removes the last copy, but an ADR then no longer records what was decided at the time, and the history of a rule is lost when the owning document changes. Rejected.
 
-## Proposed decision
+## Decision
 
 1. **PRD** owns externally observable behavior: inputs and their schemas, vocabulary, selection semantics, CLI commands and options, exit codes, outputs and their contracts, accessibility and security guarantees as promises, and acceptance criteria. It does not describe processing order, internal modules, algorithms or internal resource file names.
 2. **Technical specification** owns implementation design: module boundaries, processing pipelines, algorithms, internal resources, and how each PRD guarantee is achieved.
-3. **ADRs** own the rationale and rejected alternatives of a decision, plus the values of their open parameters. When an ADR settles a rule, the rule is written once in the owning document (PRD or technical specification) and the ADR links to it. The ADR does not restate it.
-4. **Implementation plan** owns sequencing, work packages and acceptance gates. It links to rules and does not restate them.
-5. **README** is an overview for new readers. It contains no normative rules and links to the owning document.
-6. A summary sentence that points to an owner is allowed. A second full statement of a rule, a table or an algorithm is not.
+3. **Normative rule files** under `rules/` (for example `rules/svg-logo-profile-v1.md`, `rules/accessibility-rules.md`) own detailed matrices that the PRD promises; the PRD states the promise and links to the file.
+4. **ADRs** own the rationale, the rejected alternatives, the values of their open parameters and the decision as worded when it was accepted. The decision text is a point-in-time record and is not edited afterwards. The current normative wording lives in the owning document; if the two differ, the owning document prevails, and such a difference may exist only because a later ADR amended or superseded the decision.
+5. **Implementation plan** owns sequencing, work packages and acceptance gates. It links to rules and does not restate them.
+6. **README** is an overview for new readers. It contains no normative rules and links to the owning document.
+7. A summary sentence that points to an owner is allowed. A second full statement of a rule, a table or an algorithm is not.
+8. An ADR that replaces only some items of an accepted ADR leaves the older ADR Accepted. The older ADR's status names the amending ADR, and a dated amendment note at its end lists the replaced items. The older decision text stays unchanged.
+9. ADR-0001 item 3 is amended: every ADR with phase P0.x MUST be **Accepted or Rejected** before the P0 exit gate.
 
 ## Consequences
 
-If accepted:
-
-- One follow-up change, with no behavior change, moves every duplicated rule to its owner and replaces the copies with links. The table above is the minimum scope of that change.
+- One follow-up change, with no behavior change, moves every duplicated rule to its owner and replaces the copies with links. The table above is the minimum scope of that change. It is made after ADR-0026 and ADR-0031 are decided, so that text about to be removed is not moved first.
 - The PRD becomes noticeably shorter. Implementation detail moves to the technical specification, for example the sanitizer processing order, the publication state machine and the decoration formula.
 - A future amendment touches one document per rule, plus links when a section moves.
-- Applies equally to ADR-0026 to ADR-0029: if accepted, each one's rule is written in its owning document only.
+- ADR-0027, ADR-0028 and ADR-0029 already use the amendment notes of item 8.
+- Documents changed together with this ADR: ADR register (`docs/adrs/README.md`); implementation-plan P0 exit gate; amendment note in ADR-0001.
 
 ## Verification
 

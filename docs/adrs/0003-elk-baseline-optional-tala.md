@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Accepted |
+| Status | Accepted (amended by ADR-0029) |
 | Date | 2026-09-30 |
 | Owner | Tech lead, Product owner |
 | Phase | P0.1 (decision), P0.3 (open parameters) |
@@ -42,3 +42,7 @@ D2 supports several layout engines. ELK is bundled with D2 and has no separate c
 
 - P0.3 fixtures render with the recorded flags.
 - CLI contract tests: `--layout tala` → 2; `render.layoutEngine: tala` → 1.
+
+## Amendments
+
+- 2026-10-16, [ADR-0029](0029-v0-1-command-set.md): `render` is post-MVP. Items 1 and 2 apply to `build --layout` only, and the verification case for `render --layout` is dropped.

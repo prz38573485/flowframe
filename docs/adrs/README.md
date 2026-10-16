@@ -11,7 +11,7 @@ This directory is the single register of FlowFrame architecture decisions. The P
 | Superseded | Replaced by a newer ADR, which is linked. The superseded file stays in place. |
 | Rejected | Considered and not adopted. Kept for discoverability. |
 
-Filling an open parameter is recorded as a dated amendment at the end of the same ADR. Changing a decision requires a new ADR that supersedes the old one, plus a PRD or technical-specification update in the same change.
+Filling an open parameter is recorded as a dated amendment at the end of the same ADR. Changing a decision requires a new ADR that supersedes the old one, plus a PRD or technical-specification update in the same change. When the new ADR replaces only some items, the older ADR stays Accepted, its status names the amending ADR, and a dated note under **Amendments** lists the replaced items; the older decision text is not edited ([ADR-0030](0030-single-owner-per-normative-rule.md)).
 
 ## Roles
 
@@ -61,29 +61,33 @@ Only for Accepted ADRs whose values are measured later: parameter, owning phase,
 ## Verification
 
 Tests, fixtures or experiments that prove the decision holds.
+
+## Amendments
+
+Only when a later ADR or a filled open parameter changes this one: date, ADR link and the replaced items.
 ```
 
 ## Register
 
 | ADR | Title | Status | Phase |
 |---|---|---|---|
-| [0001](0001-record-architecture-decisions.md) | Record architecture decisions | Accepted | P0.1 |
+| [0001](0001-record-architecture-decisions.md) | Record architecture decisions | Accepted (amended by 0030) | P0.1 |
 | [0002](0002-python-cli-and-d2-process-boundary.md) | Python CLI, packaging and D2 process boundary | Accepted | P0.1 |
-| [0003](0003-elk-baseline-optional-tala.md) | ELK baseline layout engine, TALA optional | Accepted | P0.1 / P0.3 |
+| [0003](0003-elk-baseline-optional-tala.md) | ELK baseline layout engine, TALA optional | Accepted (amended by 0029) | P0.1 / P0.3 |
 | [0004](0004-schema-authority-and-contract-versioning.md) | Schema authority and contract versioning | Accepted | P0.1 |
-| [0005](0005-presentation-composition-outside-d2.md) | Global presentation composed outside D2 layout | Accepted | P0.1 |
+| [0005](0005-presentation-composition-outside-d2.md) | Global presentation composed outside D2 layout | Accepted (amended by 0027, 0029) | P0.1 |
 | [0006](0006-pinned-d2-distribution.md) | Pinned D2 distribution and verification | Accepted | P0.1 / P0.2 |
 | [0007](0007-svg-text-and-fonts.md) | SVG text representation, fonts and measurement | Accepted | P0.1 / P0.4 |
-| [0008](0008-canonical-svg-output.md) | Canonical SVG output and normalization | Accepted | P0.3 |
-| [0009](0009-global-limits.md) | Fixed implementation-wide limits | Accepted | P0.6 |
-| [0010](0010-output-publication.md) | Output publication, control state and overwrite protection | Accepted | P0.7 |
+| [0008](0008-canonical-svg-output.md) | Canonical SVG output and normalization | Accepted (amended by 0029) | P0.3 |
+| [0009](0009-global-limits.md) | Fixed implementation-wide limits | Accepted (amended by 0027) | P0.6 |
+| [0010](0010-output-publication.md) | Output publication, control state and overwrite protection | Accepted (amended by 0028, 0029) | P3.8 |
 | [0011](0011-label-composition.md) | Label composition and wrapping | Accepted | P0.3 |
 | [0012](0012-shapes-and-token-application.md) | Element shapes and theme token application | Accepted | P0.3 / P0.6 |
-| [0013](0013-generic-icon-pack.md) | Generic icon pack | Accepted | P0.3 / P0.6 |
-| [0014](0014-svg-accessibility-metadata.md) | SVG accessibility metadata | Accepted | P0.3 |
+| [0013](0013-generic-icon-pack.md) | Generic icon pack | Accepted (amended by 0027) | P0.3 / P0.6 |
+| [0014](0014-svg-accessibility-metadata.md) | SVG accessibility metadata | Accepted (amended by 0027, 0029) | P0.3 |
 | [0015](0015-legend-rendering.md) | Legend rendering | Accepted | P0.4 |
-| [0016](0016-diagnostics-contract.md) | Diagnostics contract | Accepted | P1 |
-| [0017](0017-command-stage-matrix.md) | Command stage matrix | Accepted | P1 |
+| [0016](0016-diagnostics-contract.md) | Diagnostics contract | Accepted (amended by 0029) | P1 |
+| [0017](0017-command-stage-matrix.md) | Command stage matrix | Accepted (amended by 0029) | P1 |
 | [0018](0018-yaml-dialect.md) | YAML dialect | Accepted | P1 |
 | [0019](0019-default-value-resolution.md) | Single source of default values | Accepted | P1 / P0.6 |
 | [0020](0020-theme-aggregate-hash.md) | Theme aggregate hash algorithm | Accepted | P1 |
@@ -91,12 +95,12 @@ Tests, fixtures or experiments that prove the decision holds.
 | [0022](0022-supported-svg-consumers.md) | Supported SVG consumers | Proposed | P0.1 |
 | [0023](0023-performance-budgets.md) | Performance budgets | Proposed | P0.6 |
 | [0024](0024-license-and-provenance-inventory.md) | License and provenance inventory | Accepted | P0.6 / P8 |
-| [0025](0025-ai-adapter-boundary.md) | AI adapter boundary and evaluation | Accepted | P7.1 / P7.4 |
+| [0025](0025-ai-adapter-boundary.md) | AI adapter boundary and evaluation | Accepted (amended by 0029) | P7.1 / P7.4 |
 | [0026](0026-native-d2-decorations.md) | Decorations and legend placed by D2 | Proposed | P0.1 / P0.3 / P0.4 |
-| [0027](0027-logo-image-embedding-and-minimal-profile.md) | Logo embedded as an image with a minimal v1 sanitizer profile | Proposed | P0.1 / P0.5 |
-| [0028](0028-disposable-publication-state.md) | Output publication with disposable control state | Proposed | P0.1 / P0.7 |
-| [0029](0029-v0-1-command-set.md) | Reduced v0.1 command set | Proposed | P0.1 |
-| [0030](0030-single-owner-per-normative-rule.md) | One owning document per normative rule | Proposed | P0.1 |
+| [0027](0027-logo-image-embedding-and-minimal-profile.md) | Logo embedded as an image with a minimal v1 sanitizer profile | Accepted | P0.1 / P0.5 |
+| [0028](0028-disposable-publication-state.md) | Output publication with disposable control state | Accepted | P0.1 / P3.8 |
+| [0029](0029-v0-1-command-set.md) | Reduced v0.1 command set | Accepted | P0.1 |
+| [0030](0030-single-owner-per-normative-rule.md) | One owning document per normative rule | Accepted | P0.1 |
 | [0031](0031-flowframe-svg-writer-and-geometry-providers.md) | FlowFrame SVG writer with pluggable geometry providers | Proposed | P0.1 / P0.2–P0.4 |
 
 ## Mapping from former open-decision lists

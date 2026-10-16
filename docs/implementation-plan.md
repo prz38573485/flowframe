@@ -31,7 +31,7 @@ Every work package below lists its dependencies (**Dep**) and observable accepta
 |---|---|---|
 | P0 — Decisions and spikes | Stage 0 | External risks resolved and P0 ADRs accepted |
 | P1 — Repository and contracts | Stage 1 | Installable CLI shell, validated public schemas, D2 installer |
-| P2 — Loading, semantics and selection | Stage 1 | Safe, location-aware validation and deterministic review |
+| P2 — Loading, semantics and selection | Stage 1 | Safe, location-aware validation |
 | P3 — Architecture vertical slice | Stage 1 | First complete deterministic build (alpha.1) |
 | P4 — Design system and presentation | Stage 2 | Global branding, decorations, legend, accessibility and safe logos |
 | P5 — Flow and sequence families | Stage 3 | All MVP families from reusable models |
@@ -52,7 +52,7 @@ P5 contracts ─► P7 ─┴─► P8 ─► P9
 
 - Flow and sequence IR design can start after P2.7 (selection), but their release gate depends on the generator and renderer from P3 and on P4.8/P4.9 for legend and accessibility.
 - P4 theme schema work can start after P1; SVG composition integrates only after P3 produces body SVG.
-- Deterministic `review` modes are delivered in P2.9; P7 adds only source-conformance.
+- `review` arrives only in P7, for source-conformance; deterministic checking is `validate` (ADR-0029).
 - P7 adapter work needs the P5 contracts and may run alongside P6; P8 requires both P6 and P7.
 
 ---
@@ -86,7 +86,7 @@ Any intentional deviation from the PRD or technical specification requires an AD
 
 ### Objective
 
-Remove uncertainty around D2, deterministic SVG generation, text measurement, logo safety, accessibility hooks and publication before building the production architecture.
+Remove uncertainty around D2, deterministic SVG generation, text measurement, logo safety and accessibility hooks before building the production architecture.
 
 ### P0.1 — ADR framework and consumer list
 
@@ -191,33 +191,35 @@ Acc:
 
 Dep: P0.1
 
-Build a representative asset corpus containing:
+Build a representative asset corpus for the reduced `flowframe-svg-logo/v1` profile (ADR-0027) containing:
 
-- simple paths and groups; linear and radial gradients; clip paths and masks,
+- simple paths and groups; linear and radial gradients; clip paths,
 - internal `use` and `url(#id)` references,
-- every proposed bounded filter primitive,
-- a `style` block with allowed CSS,
+- logos exported from Inkscape with default `style` attributes and from Illustrator with presentation attributes,
+- `style` attributes with disallowed properties, invalid values and non-fragment `url()`,
+- `<style>` elements, `class` attributes, masks and filters (all rejected),
 - scripts and event attributes; external references and CSS imports,
 - `foreignObject`, animation and raster images,
-- excessive nesting, elements, path data and filter regions,
-- duplicate or adversarial IDs and namespaces.
+- excessive nesting, elements and path data,
+- logo IDs equal to IDs used in a body fixture.
 
 Tasks:
 
 - write the exact `flowframe-svg-logo/v1` matrix in `rules/svg-logo-profile-v1.md`,
-- validate candidate XML, CSS and path-data parsing approaches,
-- prototype deterministic ID rewriting and reference normalization,
+- validate candidate XML, `style` declaration-list and path-data parsing approaches,
 - select lossless number and namespace serialization,
 - test Illustrator/Inkscape-style comments/metadata, allowlisted editor namespaces and fragment-only `xlink:href`,
+- embed sanitized logos as `<image>` data URIs and check them in every ADR-0022 consumer,
 - measure fixtures for ADR-0009 limits,
 - confirm full-asset rejection with actionable diagnostics.
 
 Acc:
 
-- all allowed fixtures preserve expected appearance,
+- all allowed fixtures preserve expected appearance when embedded as an image,
 - all forbidden fixtures fail closed,
 - repeat sanitization is byte-identical,
 - original and sanitized hashes are stable,
+- a logo whose IDs equal body IDs renders correctly without rewriting,
 - no regular-expression-only CSS parsing is used.
 
 ### P0.6 — Close release decisions
@@ -239,31 +241,17 @@ Acc:
 - every listed ADR is Accepted or has its open parameters filled,
 - `resources/limits/v1.json` values are recorded.
 
-### P0.7 — Output publication spike (ADR-0010)
+### P0.7 — Removed
 
-Dep: P0.2
-
-Tasks:
-
-- implement a throwaway state machine for staging, backup, journal and lock,
-- inject failures at both rename crash windows and during cleanup,
-- test lock contention between two processes,
-- test forbidden output directories,
-- run on APFS and ext4.
-
-Acc:
-
-- recovery restores or completes publication in every injected crash window,
-- a competing writer fails immediately,
-- journal format and fsync points recorded in ADR-0010.
+The publication spike was dropped by [ADR-0028](adrs/0028-disposable-publication-state.md). Publication behavior is proven by contract tests in P3.8.
 
 ### P0 exit gate
 
-- every ADR with a P0 phase is Accepted, and open parameters owned by P0 are filled,
+- every ADR with a P0 phase is Accepted or Rejected (ADR-0030), and open parameters owned by P0 are filled,
 - PRD and technical specification reflect the decisions,
 - spike code or fixtures are retained only when useful and clearly marked,
 - the three representative diagrams render offline,
-- presentation, sanitizer, accessibility hooks and publication designs are proven on real D2 SVG,
+- presentation, sanitizer and accessibility-hook designs are proven on real D2 SVG,
 - no license, platform or dependency issue blocks P1.
 
 ---
@@ -447,7 +435,7 @@ Acc:
 
 ### Objective
 
-Turn structurally valid source files into immutable, location-aware domain objects, reject every invalid cross-document state and run selection so that `validate` and `review` report everything up to the family IR.
+Turn structurally valid source files into immutable, location-aware domain objects, reject every invalid cross-document state and run selection so that `validate` reports everything up to the family IR.
 
 ### P2.1 — Safe YAML loader (ADR-0018)
 
@@ -589,19 +577,9 @@ Acc:
 - a filesystem-watch test proves no writes,
 - repeated validation emits diagnostics in identical order.
 
-### P2.9 — Deterministic `review` modes
+### P2.9 — Removed
 
-Dep: P2.8
-
-Tasks:
-
-- implement `flowframe review` with modes `syntax`, `semantic` and `policy` over the same validation service,
-- reject `--source` without `source-conformance` and `source-conformance` without `--source` (2); report the missing adapter (3).
-
-Acc:
-
-- differential test: default `review` equals `validate --model --view` on the whole corpus,
-- review leaves model, View, configuration and artifacts unchanged.
+Deterministic `review` modes were dropped by [ADR-0029](adrs/0029-v0-1-command-set.md); `validate` (P2.8) is the deterministic check.
 
 ### P2 exit gate
 
@@ -609,7 +587,7 @@ Acc:
 - footer grammar behavior exactly matches the PRD,
 - path resolution is independent of working directory,
 - `validate --view` reports empty selections and selection warnings,
-- `flowframe validate` and deterministic `flowframe review` have CLI contract tests.
+- `flowframe validate` has CLI contract tests.
 
 ---
 
@@ -617,7 +595,7 @@ Acc:
 
 ### Objective
 
-Produce `diagram.d2`, canonical `diagram.svg` and `manifest.json` with staged, recoverable publication from one infrastructure view with the built-in theme and ELK.
+Produce `diagram.d2`, canonical `diagram.svg` and `manifest.json` with staged, locked publication from one infrastructure view with the built-in theme and ELK.
 
 ### P3.1 — Architecture IR
 
@@ -649,7 +627,7 @@ Tasks:
 - implement audited string/identifier escaping and injective ID mapping,
 - implement `generation/labels.py` and `generation/line_styles.py`,
 - apply ADR-0012 shapes and token application through built-in theme classes,
-- emit the three-line generated header with theme fingerprint,
+- emit the two-line generated header (ADR-0029),
 - fixed property ordering, nodes before relations, one trailing newline,
 - materialize classes; emit no imports or host paths,
 - implement the D2 lint rules of technical-spec §10,
@@ -671,7 +649,7 @@ Tasks:
 - locate and verify pinned D2 (`FLOWFRAME_D2`, PATH),
 - invoke without a shell in a new process group with an allowlisted environment,
 - enforce the fixed timeout and output limits,
-- validate before render; distinguish syntax rejection in build (FFX/6), in standalone render (FFD/1), and crash/timeout (execution/4),
+- validate before render; distinguish syntax rejection in build (FFX/6) from crash/timeout (execution/4),
 - terminate the process group on SIGINT/timeout,
 - reject partial output on non-zero exit.
 
@@ -715,41 +693,38 @@ Tasks:
 Acc:
 
 - invalid `SOURCE_DATE_EPOCH` (negative, non-integer, out of RFC 3339 range) → 2,
-- no absolute paths in the manifest,
-- the D2 header fingerprint equals `theme.sha256`.
+- no absolute paths in the manifest.
 
-### P3.7 — `compile` and low-level `render`
+### P3.7 — `compile`
 
-Dep: P3.3–P3.5
+Dep: P3.3, P3.5
 
 Tasks:
 
-- compile without D2; render only generated, linted D2 with a matching theme fingerprint,
-- apply `render --layout` precedence and explicit `--config`,
-- implement single-file overwrite protection (ADR-0010),
+- compile without D2,
+- implement single-file overwrite protection for `compile --output` (ADR-0010 item 5),
 - implement PRD CLI flags, text/JSON diagnostics and debug behavior.
 
 Acc:
 
 - `compile` succeeds with an empty PATH,
-- missing header or fingerprint mismatch → 1,
 - `--output` pointing to an input file, or to an existing non-artifact file, → 5 with the file unchanged.
 
-### P3.8 — Recoverable `build`
+### P3.8 — `build` publication
 
-Dep: P3.6, P3.7, ADR-0010
+Dep: P3.6, P3.7, ADR-0010, ADR-0028
 
 Tasks:
 
-- implement the technical-spec §11.1 state machine,
+- implement the technical-spec §11.1 sequence: advisory lock, ownership marker, per-run staging, two renames, no journal or retained backup,
 - reject forbidden output directories,
 - accept absent/empty targets and intact previous FlowFrame outputs; reject foreign files, modified artifacts and symlinks,
-- preserve the old target until verification succeeds; attempt rollback and report unsuccessful recovery,
-- retain at most one previous output and one staging set.
+- preserve the old target until verification succeeds; restore it once if the second rename fails,
+- remove leftover control state under the lock, only when the marker is present.
 
 Acc:
 
-- tests for concurrent writers (4), both rename crash windows, first build into an empty directory, rollback failure, cleanup failure, interruption (130),
+- tests for a concurrent writer (4, its staging untouched), interruption before, between and after the renames followed by a successful rebuild, failure of the second rename, first build into an empty directory, a control directory without the marker, interruption (130),
 - every forbidden output directory → 5,
 - a build writes nothing outside the target and its control directory.
 
@@ -785,7 +760,7 @@ Acc:
 - a clean offline environment builds the payments infrastructure view,
 - repeat runs produce byte-identical D2 and canonical body SVG,
 - manifest validates and contains the pinned toolchain identity,
-- renderer failures before publication preserve the previous complete output; publication failures expose documented rollback/recovery behavior,
+- renderer failures before publication preserve the previous complete output; an interrupted publication never leaves a mixed artifact set,
 - no source document can inject D2 or visual style,
 - CI passes on macOS and Linux.
 
@@ -843,7 +818,7 @@ Acc:
 
 Dep: P0.5
 
-Finalize `rules/svg-logo-profile-v1.md`: allowed elements, attributes, CSS, gradient/clip/mask/reference rules, filter matrix, ADR-0009 limits, rejection matrix, canonicalization and ID rewriting, conformance examples.
+Finalize `rules/svg-logo-profile-v1.md` (ADR-0027): allowed elements, attributes and `style` properties, gradient/clip/reference rules, ADR-0009 limits, rejection matrix, canonicalization, conformance examples.
 
 Acc:
 
@@ -856,11 +831,11 @@ Dep: P4.4
 Tasks:
 
 - byte cap before parsing; XML with DTD/entities/network disabled,
-- element, nesting, path and filter-region limits,
-- CSS parsing with `tinycss2`,
+- element, nesting and path limits,
+- `style` declaration-list parsing with `tinycss2`; reject `<style>`, `class`, masks and filters,
 - reference graph validation; reject external/data URLs and raster images,
 - fail on unknown content; remove only allowlisted inert metadata/comments,
-- deterministic ID rewriting, canonical bytes and both hashes,
+- canonical bytes and both hashes,
 - expose finite intrinsic bounds to the compositor.
 
 Acc:
@@ -928,20 +903,20 @@ Acc:
 
 - `<desc>` goldens for architecture; P5 extends them to flow and sequence,
 - missing title uses the View ID,
-- metadata IDs never collide with body or logo IDs.
+- metadata IDs never collide with body IDs.
 
 ### P4.10 — Decoration compositor
 
 Dep: P4.5, P4.7–P4.9
 
-Implement in this order: read verified body bounds; measure title block, logo, legend and footer; fit logo ("contain"); compute bands; compute slot widths per PRD §13.6; translate body once; place fragments with collision-safe IDs; inject accessibility metadata; canonicalize and verify.
+Implement in this order: read verified body bounds; measure title block, logo, legend and footer; fit logo ("contain"); compute bands; compute slot widths per PRD §13.6; translate body once; place fragments with collision-safe IDs and the logo as an `<image>` data URI (ADR-0027); inject accessibility metadata; canonicalize and verify.
 
 Acc — tests cover:
 
 - no decorations; every individual decoration; all valid slot combinations,
 - invalid same-slot title/logo combination, including via defaults,
 - absent optional metadata; long and Unicode text,
-- logo smaller and larger than its box; logo IDs colliding with body IDs,
+- logo smaller and larger than its box; logo IDs equal to body IDs render without rewriting,
 - narrow and wide bodies; body and decorations at canvas limits,
 - automated bounds: decoration and legend bounds never intersect body bounds.
 
@@ -969,7 +944,7 @@ Tasks:
 
 - implement `build --all` over the `views` registry with one model/config/theme,
 - validate all views up to the IR before rendering any,
-- publish to `<output-dir>/<view-id>/` in sorted order with P3 per-view recoverable replacement,
+- publish to `<output-dir>/<view-id>/` in sorted order with the P3 per-view replacement (technical-spec §11.1),
 - report partial progress on render/publication failure.
 
 Acc:
@@ -1133,7 +1108,7 @@ Tasks:
 - single-file overwrite attempts,
 - malicious labels aimed at D2 injection,
 - XML entities and DTDs; SVG scripts, events, external URLs, CSS imports,
-- excessive SVG/filter/path complexity,
+- excessive SVG/path complexity,
 - renderer timeout, output flooding and orphan processes,
 - environment influence (non-allowlisted variables),
 - stale/partial artifact publication.
@@ -1169,7 +1144,7 @@ Tasks:
 - test exit codes 0–6 and 130, including a synthetic exception and mixed-category precedence,
 - validate every JSON-mode stderr against `flowframe-diagnostics/v1` and assert empty stdout, including with `--debug` and `PYTHONWARNINGS=always`,
 - hide stack traces outside debug mode,
-- SIGINT in every publication phase: rollback/cleanup and reporting of any retained backup.
+- SIGINT in every publication phase: complete old output, complete new output or no target, and the lock released.
 
 Acc:
 
@@ -1256,17 +1231,19 @@ Acc:
 
 ### P7.5 — Source-conformance review
 
-Dep: P7.3, P2.9
+Dep: P7.3, P2.8
 
 Tasks:
 
-- implement `review --mode source-conformance` with explicit `--source` inputs,
+- implement `review --model --view --source...` without `--mode` (ADR-0029),
+- run the validation service first and stop on errors with the `validate` diagnostics and exit code, without calling the adapter,
 - report findings as `FFA` warnings,
-- report a missing adapter as exit 3.
+- report a missing `--source` as exit 2 and a missing adapter as exit 3.
 
 Acc:
 
-- review stays read-only in every mode,
+- review stays read-only,
+- for an invalid model, review returns the same diagnostics and exit code as `validate`,
 - findings validate against the diagnostics schema.
 
 ### P7 exit gate
@@ -1325,8 +1302,8 @@ Document:
 - building one or all diagrams; forbidden output directories,
 - title, subtitle, static/source footer, logo and legend behavior,
 - asset and font restrictions, including documented script coverage of the default font,
-- output/manifest interpretation, header fingerprint equal to `theme.sha256`, failure categories,
-- ordinary output directories, ignoring private `.<name>.flowframe/` state, `.gitattributes` and formatter exclusions (ADR-0021), bounded retention and recovery,
+- output/manifest interpretation, failure categories,
+- ordinary output directories, ignoring private `.<name>.flowframe/` state, `.gitattributes` and formatter exclusions (ADR-0021), and rerunning a build after an interrupted publication,
 - CI examples for GitHub Actions and GitLab CI,
 - upgrades and golden snapshot review,
 - troubleshooting by diagnostic code.
@@ -1364,14 +1341,15 @@ These items do not block v0.1:
 - PNG, PDF and PPTX outputs,
 - Windows release support,
 - schema migration tooling,
-- `validate --all` and `review --all`,
+- `validate --all`,
 - element-count guideline warnings,
 - `select.within` boundary-scoped selection,
 - flow source/sink annotations,
 - glyph-coverage validation,
 - machine-readable SPDX license inventories,
+- low-level `render` with its own ADR for the trust model of supplied D2,
 - Python facade entry points for `render` and `review`,
-- advanced visual-analysis loop, `review --mode visual`, simplify/refactor prompts and skills with a defined quality metric,
+- advanced visual-analysis loop, visual review, simplify/refactor prompts and skills with a defined quality metric,
 - public extension/plugin API,
 - performance cache with complete content-addressed keys.
 
@@ -1430,8 +1408,8 @@ Do not group unrelated schema, renderer and presentation changes into one review
 | AC15 `build --all` (§17) | P4.12, P5.5 | Installed CLI project build |
 | AC16 security (§16.4, §16.5) | P6.3 | Rejection corpus |
 | AC17 accessibility metadata (§13.7) | P4.9, P5.2, P5.4 | `<desc>` goldens, consumer checks |
-| AC18 review and exit codes (§17) | P2.9, P7.5, P6.5 | Differential and contract tests, JSON schema validation |
-| AC19 publication safety (§17.2) | P0.7, P3.7, P3.8 | Crash-window, rollback and overwrite tests |
+| AC18 review and exit codes (§17) | P2.8, P7.5, P6.5 | Differential and contract tests, JSON schema validation |
+| AC19 publication safety (§17.2) | P3.7, P3.8 | Interruption, lock and overwrite tests |
 | AC20 D2 pin and installer (§17) | P1.8, P3.4, P8.1 | Offline install, exit-3 diagnostics |
 | AC21 performance (§22) | P6.6 | Benchmark job |
 | Label composition (§13.10) | P3.3, P5.2, P5.4 | Label goldens |
@@ -1456,10 +1434,10 @@ After P0 decisions are accepted, the first reviewable sequence SHOULD be:
 6. domain objects and diagnostics (P2.3, P2.4),
 7. semantic validation and footer parser (P2.5, P2.6),
 8. selection engine (P2.7),
-9. `flowframe validate` and deterministic `review` (P2.8, P2.9),
+9. `flowframe validate` (P2.8),
 10. architecture IR, projection and D2 writer (P3.1–P3.3),
 11. D2 wrapper, body SVG verification, manifest (P3.4–P3.6),
-12. `compile`, `render` and recoverable `build` (P3.7, P3.8),
+12. `compile` and `build` publication (P3.7, P3.8),
 13. publish v0.1-alpha.1 (P3.9),
 14. theme, contrast, sanitizer, icons, text, legend, accessibility and compositor (P4),
 15. flow and sequence families (P5),

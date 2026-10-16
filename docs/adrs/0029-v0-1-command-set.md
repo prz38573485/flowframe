@@ -2,55 +2,56 @@
 
 | Field | Value |
 |---|---|
-| Status | Proposed |
-| Date | 2026-10-01 |
+| Status | Accepted |
+| Date | 2026-10-16 |
 | Owner | Product owner, Tech lead |
 | Phase | P0.1 |
-| Related | PRD §3.1, §17, §18.2, §22 (AC 18); technical-spec §10, §16, §17; ADR-0016, ADR-0017, ADR-0025 |
+| Related | PRD §3.1, §3.2, §6.2, §13.7, §17, §17.1, §18.2, §22 (AC 18); technical-spec §10, §11, §11.1, §12.3, §16, §17; ADR-0003, ADR-0005, ADR-0008, ADR-0010, ADR-0014, ADR-0016, ADR-0017, ADR-0025 |
 
 ## Context
 
-The v0.1 CLI contract (PRD §17) has six commands. Two of them add contract surface without adding capability:
+The v0.1 CLI contract (PRD §17) had six commands. Two of them added contract surface without adding capability:
 
-- **`review` with its default modes `syntax`, `semantic` and `policy`** is defined to "produce the same findings/status as `validate --model ... --view ...`" (PRD §17, ADR-0017 rule 1). It is a second name for `validate`. It needs its own mode grammar, usage-error combinations, a differential test over the whole corpus (P2.9) and an AC 18 clause. The only capability `review` adds is source-conformance, which arrives with the AI adapter in P7.
-- **`render`** renders a body-only SVG from a previously compiled D2 file. Because the D2 file is supplied from outside the build, it needs:
+- **`review` with its default modes `syntax`, `semantic` and `policy`** was defined to "produce the same findings/status as `validate --model ... --view ...`" (PRD §17, ADR-0017 rule 1). It was a second name for `validate`. It needed its own mode grammar, usage-error combinations, a differential test over the whole corpus (P2.9) and an AC 18 clause. The only capability `review` adds is source-conformance, which arrives with the AI adapter in P7.
+- **`render`** rendered a body-only SVG from a previously compiled D2 file. Because the D2 file is supplied from outside the build, it needed:
   - a theme fingerprint in the generated header,
   - a full policy lint of supplied input,
   - a separate classification of D2 syntax rejections as user validation errors (FFD, exit 1) rather than internal errors,
   - its own `--layout` and `--config` rules.
 
-  The PRD itself states that `compile + render` is not equivalent to `build`. Its debugging value, seeing the D2 body without decorations, is already covered by `build --debug`, which keeps the raw renderer SVG (ADR-0008 item 3).
+  The PRD itself stated that `compile + render` is not equivalent to `build`. Its debugging value, seeing the D2 body without decorations, is already covered by `build --debug`, which keeps the raw renderer SVG (ADR-0008 item 3).
 
 ## Alternatives considered
 
-- **Keep all six commands.** Matches the accepted contract and costs the work above.
-- **v0.1 ships `validate`, `compile`, `build` and `version`; `review` exists only for source-conformance and arrives in P7; `render` is post-MVP.** Proposed here.
+- **Keep all six commands.** Matches the earlier contract and costs the work above.
+- **v0.1 ships `validate`, `compile`, `build` and `version`; `review` exists only for source-conformance and arrives in P7; `render` is post-MVP.** Adopted.
 
-## Proposed decision
+## Decision
 
-1. The v0.1 core commands are `validate`, `compile`, `build` and `version`.
+1. The v0.1 core commands are `validate`, `compile`, `build` and `version`, plus `review` from P7.
 2. Deterministic checking is `validate`. The deterministic `review` modes (`syntax`, `semantic`, `policy`) are not part of v0.1.
-3. `review` is introduced in P7 for source-conformance only: `flowframe review --model MODEL --view VIEW [--config CONFIG] --source SOURCE...`. There is no `--mode` option. ADR-0025 is otherwise unchanged: FFA warnings, exit 3 when the adapter is missing, and a missing `--source` is a usage error.
-4. `render` is post-MVP. If it returns, together with the hand-authored D2 compatibility mode mentioned in PRD §5, it gets its own ADR for the trust model of supplied D2.
-5. The generated D2 header keeps the two lines that identify a FlowFrame artifact for overwrite protection (ADR-0010 item 5). The `flowframe-theme-sha256` line is dropped: `render` was its only consumer, and the manifest still records `theme.sha256`.
-6. ADR-0017 keeps one validation service. Its differential test compares `validate --model M --view V` with `build` up to and including the family IR.
+3. `review` is introduced in P7 for source-conformance only: `flowframe review --model MODEL --view VIEW [--config CONFIG] --source SOURCE...`. There is no `--mode` option. A missing `--source` is a usage error (2).
+4. `review` first runs the validation service for the model and View exactly as `validate --model MODEL --view VIEW` does and reports the same diagnostics. If any error is found, it stops with the exit code `validate` would return and does not call the adapter. Otherwise it runs source-conformance, which reports `FFA` warnings and does not change the exit status. A missing adapter returns 3 (ADR-0025).
+5. `render` is post-MVP. If it returns, together with the hand-authored D2 compatibility mode mentioned in PRD §5, it gets its own ADR for the trust model of supplied D2.
+6. The generated D2 header keeps two lines: `# Generated by FlowFrame <version>. Do not edit.` and `# flowframe-header: v1`. They identify a FlowFrame artifact for overwrite protection (ADR-0010 item 5). The `flowframe-theme-sha256` line is dropped: `render` was its only consumer, and the manifest still records `theme.sha256`.
+7. ADR-0017 keeps one validation service. Its differential test compares `validate --model M --view V` with `build` up to and including the family IR; from P7 it also covers the validation part of `review`.
 
 ## Consequences
 
-If accepted:
-
 - Removed from v0.1:
-  - P2.9 and its differential test,
+  - P2.9 and its differential test against a separate `review` command,
   - the `--mode` grammar and its usage errors,
-  - the render-specific header and fingerprint checks,
+  - the render-specific header fingerprint and its checks,
   - lint of externally supplied D2 and the FFD/exit-1 category for supplied artifacts,
-  - `render --layout` precedence.
+  - `render --layout` precedence and the single-file overwrite rule for `render --output`,
+  - the Python facade entry point for `render` from the post-MVP list.
 - `compile` remains, for D2 inspection and golden tests. It requires no D2 executable.
 - Diagnostics and exit codes (ADR-0016) lose the cases that only `render` could produce. A D2 rejection inside `build` stays FFX (exit 6).
-- Documents to change on acceptance: README "Planned CLI"; PRD §3.1, §3.2, §17, §17.1, §18.2, §22 AC 18; technical-spec §10, §16, §17; ADR-0016, ADR-0017 (columns `review` and `render`); implementation-plan P2.9, P3.7, P6.5, P7.5, traceability matrix.
+- Documents changed together with this ADR: README "Planned CLI"; PRD §3.1, §3.2, §6.2, §13.7, §17, §17.1, §18.2, §22 AC 18; technical-spec §5, §10, §11, §11.1, §12.3, §16, §17, §19; implementation-plan P2, P3.3, P3.4, P3.6, P3.7, P6.5, P7.5, P8.3, P9, the traceability matrix and the first implementation sequence; amendment notes in ADR-0003, ADR-0005, ADR-0008, ADR-0010, ADR-0014, ADR-0016, ADR-0017 and ADR-0025.
 
 ## Verification
 
 - CLI contract tests list exactly the v0.1 commands, and help output matches PRD §17.
 - The differential `validate` and `build` test passes over the whole corpus.
 - `build --debug` retains the raw body SVG in the diagnostic directory.
+- P7.5: `review` on an invalid model returns the `validate` diagnostics and exit code without calling the adapter.

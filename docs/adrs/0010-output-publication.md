@@ -2,10 +2,10 @@
 
 | Field | Value |
 |---|---|
-| Status | Accepted |
+| Status | Accepted (amended by ADR-0028, ADR-0029) |
 | Date | 2026-09-30 |
 | Owner | Tech lead, Security reviewer |
-| Phase | P0.7 (proof) |
+| Phase | P0.7 (proof; replaced by P3.8 contract tests, ADR-0028) |
 | Related | PRD §16.4, §17.2; technical-spec §11.1; ADR-0004, ADR-0008 |
 
 ## Context
@@ -45,3 +45,8 @@ Builds replace a directory of three artifacts. The technical specification place
 
 - P0.7 spike tests both rename crash windows, lock contention and cleanup on APFS and ext4.
 - P3.7/P3.8 contract tests for every forbidden output directory and for single-file overwrite refusal.
+
+## Amendments
+
+- 2026-10-16, [ADR-0028](0028-disposable-publication-state.md): The state machine referenced by item 1 is replaced: no recovery journal, no retained backup and no restore on a later run; the advisory lock stays. The open parameter "journal format and fsync points" and the P0.7 spike are dropped, and verification moves to P3.8 contract tests.
+- 2026-10-16, [ADR-0029](0029-v0-1-command-set.md): Item 5 applies to `compile --output` only; `render` is post-MVP.

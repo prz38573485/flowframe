@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Accepted |
+| Status | Accepted (amended by ADR-0029) |
 | Date | 2026-09-30 |
 | Owner | Tech lead, Security reviewer |
 | Phase | P0.3 |
@@ -43,3 +43,7 @@ The PRD pipeline shows "normalize / verify / publish", while other sections desc
 - Canonicalization is idempotent: canonicalizing canonical output yields identical bytes.
 - Repeat builds in two absolute paths produce identical `diagram.svg` (P6.2).
 - Fixtures with forbidden CSS in renderer output are rejected.
+
+## Amendments
+
+- 2026-10-16, [ADR-0029](0029-v0-1-command-set.md): Item 1 applies to `build` only; `render` is post-MVP.
